@@ -61,17 +61,17 @@ exports.login = async (req, res) => {
 
         const user = await User.findOne({ email }).select("+password +active");
 
+        if (!user || !(await user.correctPassword(password, user.password))) {
+            return res
+                .status(401)
+                .json({ status: "fail", message: "Invalid credentials" });
+        }
+
         if (!user.active) {
             return res.status(401).json({
                 status: "fail",
                 message: "Your account has been deactivated!",
             });
-        }
-
-        if (!user || !(await user.correctPassword(password, user.password))) {
-            return res
-                .status(401)
-                .json({ status: "fail", message: "Invalid credentials" });
         }
 
         createSendToken(user, 200, res);

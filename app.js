@@ -2,6 +2,7 @@ const express = require("express");
 const morgan = require("morgan");
 
 const userRouter = require("./routes/userRoutes");
+const eventRouter = require("./routes/eventRoutes");
 
 const app = express();
 
@@ -15,5 +16,6 @@ if (process.env.NODE_ENV === "development") {
 
 // ROUTES
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/events", eventRouter);
 
 module.exports = app;
