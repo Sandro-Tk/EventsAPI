@@ -9,7 +9,7 @@ const {
     attendEvent,
 } = require("../controllers/eventController");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const { uploadEventPhoto } = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
@@ -24,12 +24,17 @@ router.post(
     "/createEvent",
     protect,
     restrictTo("admin"),
-    upload.single("photo"),
+    uploadEventPhoto.single("photo"),
     createEvent
 );
 router
     .route("/:id")
-    .patch(protect, restrictTo("admin"), upload.single("photo"), updateEvent)
+    .patch(
+        protect,
+        restrictTo("admin"),
+        uploadEventPhoto.single("photo"),
+        updateEvent
+    )
     .delete(protect, restrictTo("admin"), deleteEvent);
 
 module.exports = router;

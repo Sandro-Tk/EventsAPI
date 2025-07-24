@@ -176,7 +176,11 @@ exports.deleteEvent = async (req, res) => {
         }
 
         if (event.photo !== "default.jpg") {
-            const imagePath = path.join(__dirname, "../uploads", event.photo);
+            const imagePath = path.join(
+                __dirname,
+                "../uploads/events",
+                event.photo
+            );
             fs.unlink(imagePath, (err) => {
                 if (err)
                     console.warn("Failed to delete event photo:", err.message);
