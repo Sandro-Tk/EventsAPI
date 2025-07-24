@@ -1,4 +1,6 @@
 const Event = require("../models/eventModel");
+const path = require("path");
+const fs = require("fs");
 
 exports.getAllEvents = async (req, res) => {
     try {
@@ -78,6 +80,16 @@ exports.attendEvent = async (req, res) => {
                 message: "Already attending this event",
             });
 
+        if (
+            event.maxParticipants &&
+            event.attendees.length >= event.maxParticipants
+        ) {
+            return res.status(400).json({
+                status: "fail",
+                message: "Event is fully booked",
+            });
+        }
+
         event.attendees.push(req.user.id);
         // save the changes to the event
         await event.save();
@@ -96,6 +108,10 @@ exports.attendEvent = async (req, res) => {
 
 exports.createEvent = async (req, res) => {
     try {
+        if (req.file) {
+            req.body.photo = req.file.filename;
+        }
+
         req.body.createdBy = req.user.id;
         const event = await Event.create(req.body);
 
@@ -111,16 +127,38 @@ exports.createEvent = async (req, res) => {
 
 exports.updateEvent = async (req, res) => {
     try {
+        const curEvent = await Event.findById(req.params.id);
+
+        if (!curEvent) {
+            return res
+                .status(404)
+                .json({ status: "fail", message: "Event not found" });
+        }
+
+        if (req.file) {
+            req.body.photo = req.file.filename;
+
+            if (curEvent.photo !== "default.jpg") {
+                const oldPath = path.join(
+                    __dirname,
+                    "../uploads",
+                    curEvent.photo
+                );
+                fs.unlink(oldPath, (err) => {
+                    if (err)
+                        console.warn(
+                            "Failed to delete old photo:",
+                            err.message
+                        );
+                });
+            }
+        }
+
         const event = await Event.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true,
         });
 
-        if (!event) {
-            return res
-                .status(404)
-                .json({ status: "fail", message: "Event not found" });
-        }
         res.status(200).json({ status: "success", data: { event } });
     } catch (err) {
         res.status(400).json({ status: "fail", message: err.message });
@@ -129,13 +167,23 @@ exports.updateEvent = async (req, res) => {
 
 exports.deleteEvent = async (req, res) => {
     try {
-        const event = await Event.findByIdAndDelete(req.params.id);
+        const event = await Event.findById(req.params.id);
 
         if (!event) {
             return res
                 .status(404)
                 .json({ status: "fail", message: "Event not found" });
         }
+
+        if (event.photo !== "default.jpg") {
+            const imagePath = path.join(__dirname, "../uploads", event.photo);
+            fs.unlink(imagePath, (err) => {
+                if (err)
+                    console.warn("Failed to delete event photo:", err.message);
+            });
+        }
+
+        await Event.findByIdAndDelete(req.params.id);
         res.status(204).json({ status: "success", data: null });
     } catch (err) {
         res.status(400).json({ status: "fail", message: err.message });
