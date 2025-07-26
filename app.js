@@ -1,5 +1,6 @@
 const express = require("express");
 const morgan = require("morgan");
+const globalErrorHandler = require("./middleware/errorMiddleware");
 
 const userRouter = require("./routes/userRoutes");
 const eventRouter = require("./routes/eventRoutes");
@@ -17,5 +18,7 @@ if (process.env.NODE_ENV === "development") {
 // ROUTES
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/events", eventRouter);
+
+app.use(globalErrorHandler);
 
 module.exports = app;
