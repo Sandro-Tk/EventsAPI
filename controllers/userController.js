@@ -1,58 +1,19 @@
 const User = require("../models/userModel");
 const fs = require("fs");
 const path = require("path");
+const {
+    updateOne,
+    deleteOne,
+    getOne,
+    getAll,
+    createOne,
+} = require("../utils/handlerFactory");
+const AppError = require("../utils/appError");
 
-exports.getAllUsers = async (req, res) => {
-    try {
-        const { status } = req.query;
-        const filter =
-            status === "active"
-                ? { active: true }
-                : status === "inactive"
-                  ? { active: false }
-                  : {};
-
-        const users = await User.find(filter);
-        res.status(200).json({
-            status: "success",
-            results: users.length,
-            data: { users },
-        });
-    } catch (err) {
-        res.status(400).json({ status: "fail", message: err.message });
-    }
-};
-
-exports.getUser = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res
-                .status(404)
-                .json({ status: "fail", message: "User not found" });
-        }
-        res.status(200).json({ status: "success", data: { user } });
-    } catch (err) {
-        res.status(400).json({ status: "fail", message: err.message });
-    }
-};
-
-exports.createUser = async (req, res) => {
-    try {
-        if (req.file) {
-            req.body.photo = req.file.filename;
-        }
-
-        const newUser = await User.create(req.body);
-        res.status(201).json({ status: "success", data: { user: newUser } });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message,
-            error: err.name,
-        });
-    }
-};
+exports.getUser = getOne(User);
+exports.getAllUsers = getAll(User);
+exports.createUser = createOne(User);
+exports.deleteMe = deleteOne(User, true);
 
 exports.updateUser = async (req, res) => {
     try {
@@ -82,18 +43,13 @@ exports.updateUser = async (req, res) => {
             }
         }
 
-        const user = await User.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true,
-        });
-
-        res.status(200).json({ status: "success", data: { user } });
+        return updateOne(User)(req, res, next);
     } catch (err) {
-        res.status(400).json({ status: "fail", message: err.message });
+        next(new AppError(err.message, 400));
     }
 };
 
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id);
 
@@ -115,11 +71,9 @@ exports.deleteUser = async (req, res) => {
             });
         }
 
-        await User.findByIdAndDelete(req.params.id);
-
-        res.status(204).json({ status: "success", data: null });
+        return deleteOne(User)(req, res, next);
     } catch (err) {
-        res.status(400).json({ status: "fail", message: err.message });
+        next(new AppError(err.message, 400));
     }
 };
 
@@ -168,34 +122,7 @@ exports.updateMe = async (req, res) => {
                 allowedFields[key] === undefined && delete allowedFields[key]
         );
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user.id,
-            allowedFields,
-            // adds the updated user to the DB instead
-            { new: true, runValidators: true }
-        );
-
-        res.status(200).json({
-            status: "success",
-            data: {
-                user: updatedUser,
-            },
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message,
-        });
-    }
-};
-
-exports.deleteMe = async (req, res) => {
-    try {
-        await User.findByIdAndUpdate(req.user.id, { active: false });
-        res.status(204).json({
-            status: "success",
-            data: null,
-        });
+        return updateOne(User, allowedFields);
     } catch (err) {
         res.status(400).json({
             status: "fail",

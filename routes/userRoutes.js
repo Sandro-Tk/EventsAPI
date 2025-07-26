@@ -43,6 +43,9 @@ router.use(restrictTo("admin"));
 
 router
     .route("/")
+    //  * GET /api/v1/users?status=active
+    //  * Optional query: status = "active" | "inactive"
+    //  * Returns filtered user list. Invalid values return 400.
     .get(getAllUsers)
     .post(uploadUserPhoto.single("photo"), createUser);
 router

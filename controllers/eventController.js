@@ -1,45 +1,18 @@
 const Event = require("../models/eventModel");
 const path = require("path");
 const fs = require("fs");
+const {
+    updateOne,
+    deleteOne,
+    getAll,
+    getOne,
+    createOne,
+} = require("../utils/handlerFactory");
+const AppError = require("../utils/appError");
 
-exports.getAllEvents = async (req, res) => {
-    try {
-        const events = await Event.find();
-
-        res.status(200).json({
-            status: "success",
-            results: events.length,
-            data: events,
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message,
-        });
-    }
-};
-
-exports.getEvent = async (req, res) => {
-    try {
-        const event = await Event.findById(req.params.id);
-
-        if (!event)
-            return res.status(404).json({
-                status: "fail",
-                message: "Event Could not be found",
-            });
-
-        res.status(200).json({
-            status: "success",
-            data: event,
-        });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message,
-        });
-    }
-};
+exports.getAllEvents = getAll(Event);
+exports.getEvent = getOne(Event);
+exports.createEvent = createOne(Event, true);
 
 exports.getMyEvents = async (req, res) => {
     try {
@@ -106,26 +79,7 @@ exports.attendEvent = async (req, res) => {
     }
 };
 
-exports.createEvent = async (req, res) => {
-    try {
-        if (req.file) {
-            req.body.photo = req.file.filename;
-        }
-
-        req.body.createdBy = req.user.id;
-        const event = await Event.create(req.body);
-
-        res.status(201).json({ status: "success", data: { event } });
-    } catch (err) {
-        res.status(400).json({
-            status: "fail",
-            message: err.message,
-            error: err.name,
-        });
-    }
-};
-
-exports.updateEvent = async (req, res) => {
+exports.updateEvent = async (req, res, next) => {
     try {
         const curEvent = await Event.findById(req.params.id);
 
@@ -141,7 +95,7 @@ exports.updateEvent = async (req, res) => {
             if (curEvent.photo !== "default.jpg") {
                 const oldPath = path.join(
                     __dirname,
-                    "../uploads",
+                    "../uploads/events",
                     curEvent.photo
                 );
                 fs.unlink(oldPath, (err) => {
@@ -154,18 +108,13 @@ exports.updateEvent = async (req, res) => {
             }
         }
 
-        const event = await Event.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true,
-        });
-
-        res.status(200).json({ status: "success", data: { event } });
+        return updateOne(Event)(req, res, next);
     } catch (err) {
-        res.status(400).json({ status: "fail", message: err.message });
+        next(new AppError(err.message, 400));
     }
 };
 
-exports.deleteEvent = async (req, res) => {
+exports.deleteEvent = async (req, res, next) => {
     try {
         const event = await Event.findById(req.params.id);
 
@@ -187,9 +136,8 @@ exports.deleteEvent = async (req, res) => {
             });
         }
 
-        await Event.findByIdAndDelete(req.params.id);
-        res.status(204).json({ status: "success", data: null });
+        return deleteOne(Event)(req, res, next);
     } catch (err) {
-        res.status(400).json({ status: "fail", message: err.message });
+        next(new AppError(err.message, 400));
     }
 };
