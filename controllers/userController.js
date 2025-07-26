@@ -2,7 +2,6 @@ const User = require("../models/userModel");
 const fs = require("fs");
 const path = require("path");
 
-// Get all users
 exports.getAllUsers = async (req, res) => {
     try {
         const { status } = req.query;
@@ -24,7 +23,6 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-// Get a single user by ID
 exports.getUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -39,7 +37,6 @@ exports.getUser = async (req, res) => {
     }
 };
 
-// Create a new user
 exports.createUser = async (req, res) => {
     try {
         if (req.file) {
@@ -57,7 +54,6 @@ exports.createUser = async (req, res) => {
     }
 };
 
-// Update a user
 exports.updateUser = async (req, res) => {
     try {
         const curUser = await User.findById(req.params.id);
@@ -97,7 +93,6 @@ exports.updateUser = async (req, res) => {
     }
 };
 
-// Delete a user
 exports.deleteUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -128,7 +123,6 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-// Returns the currently logged-in user's data
 exports.getMe = (req, res) => {
     res.status(200).json({
         status: "success",
@@ -136,14 +130,13 @@ exports.getMe = (req, res) => {
     });
 };
 
-// Lets user update their data
 exports.updateMe = async (req, res) => {
     try {
         if (req.file) {
             req.body.photo = req.file.filename;
         }
 
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.user.id);
 
         if (!user) {
             return res
@@ -196,7 +189,6 @@ exports.updateMe = async (req, res) => {
     }
 };
 
-// Deletes or deactivates current user
 exports.deleteMe = async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.user.id, { active: false });

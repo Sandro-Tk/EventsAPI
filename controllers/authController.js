@@ -168,7 +168,7 @@ exports.resetPassword = async (req, res) => {
     }
 };
 
-// Only possible in frontend by deleting the jwt token
+// Only possible in frontend by deleting the jwt token, unless i add an actual frontend
 exports.logout = (req, res) => {
     res.cookie("jwt", "loggedout", {
         expires: new Date(Date.now() + 10 * 1000),
