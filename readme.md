@@ -42,7 +42,7 @@ npm run dev
 
 ---
 
-🚧 Future Enhancement Plans
+## 🚧 Future Enhancement Plans
 
 ✉️ Email password reset (currently skipped)
 
