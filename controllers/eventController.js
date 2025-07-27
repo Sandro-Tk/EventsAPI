@@ -1,6 +1,4 @@
 const Event = require("../models/eventModel");
-const path = require("path");
-const fs = require("fs");
 const {
     updateOne,
     deleteOne,
@@ -10,6 +8,7 @@ const {
 } = require("../utils/handlerFactory");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
+const { deletePhoto } = require("../utils/fileUtils");
 
 exports.getAllEvents = getAll(Event);
 exports.getEvent = getOne(Event);
@@ -38,6 +37,7 @@ exports.unattendEvent = catchAsync(async (req, res, next) => {
         return next(new AppError("You aren't attending this event", 400));
     }
 
+    // mongoose pull operator for removing
     event.attendees.pull(req.user.id);
 
     await event.save();
@@ -84,18 +84,7 @@ exports.updateEvent = catchAsync(async (req, res, next) => {
 
     if (req.file) {
         req.body.photo = req.file.filename;
-
-        if (curEvent.photo !== "default.jpg") {
-            const oldPath = path.join(
-                __dirname,
-                "../uploads/events",
-                curEvent.photo
-            );
-            fs.unlink(oldPath, (err) => {
-                if (err)
-                    console.warn("Failed to delete old photo:", err.message);
-            });
-        }
+        deletePhoto("events", curEvent.photo);
     }
 
     return updateOne(Event)(req, res, next);
@@ -108,16 +97,7 @@ exports.deleteEvent = catchAsync(async (req, res, next) => {
         return next(new AppError("Event not found", 404));
     }
 
-    if (event.photo !== "default.jpg") {
-        const imagePath = path.join(
-            __dirname,
-            "../uploads/events",
-            event.photo
-        );
-        fs.unlink(imagePath, (err) => {
-            if (err) console.warn("Failed to delete event photo:", err.message);
-        });
-    }
+    deletePhoto("events", event.photo);
 
     return deleteOne(Event)(req, res, next);
 });

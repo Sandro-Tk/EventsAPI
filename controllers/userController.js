@@ -1,6 +1,4 @@
 const User = require("../models/userModel");
-const fs = require("fs");
-const path = require("path");
 const {
     updateOne,
     deleteOne,
@@ -10,6 +8,7 @@ const {
 } = require("../utils/handlerFactory");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
+const { deletePhoto } = require("../utils/fileUtils");
 
 exports.getUser = getOne(User);
 exports.getAllUsers = getAll(User);
@@ -24,18 +23,7 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
     if (req.file) {
         req.body.photo = req.file.filename;
-
-        if (curUser.photo !== "default.jpg") {
-            const oldPath = path.join(
-                __dirname,
-                "../uploads/users",
-                curUser.photo
-            );
-            fs.unlink(oldPath, (err) => {
-                if (err)
-                    console.warn("Failed to delete old photo:", err.message);
-            });
-        }
+        deletePhoto("users", curUser.photo);
     }
 
     return updateOne(User)(req, res, next);
@@ -48,12 +36,7 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
         return next(new AppError("User not found", 404));
     }
 
-    if (user.photo !== "default.jpg") {
-        const imagePath = path.join(__dirname, "../uploads/users", user.photo);
-        fs.unlink(imagePath, (err) => {
-            if (err) console.warn("Failed to delete user photo:", err.message);
-        });
-    }
+    deletePhoto("users", user.photo);
 
     return deleteOne(User)(req, res, next);
 });
@@ -76,11 +59,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         return next(new AppError("User not found", 404));
     }
 
-    if (req.file && user.photo !== "default.jpg") {
-        const imagePath = path.join(__dirname, "../uploads/users", user.photo);
-        fs.unlink(imagePath, (err) => {
-            if (err) console.warn("Failed to delete user photo:", err.message);
-        });
+    if (req.file) {
+        deletePhoto("users", user.photo);
     }
 
     const allowedFields = {
