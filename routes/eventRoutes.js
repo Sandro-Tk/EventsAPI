@@ -7,6 +7,7 @@ const {
     deleteEvent,
     getMyEvents,
     attendEvent,
+    unattendEvent,
 } = require("../controllers/eventController");
 const { protect, restrictTo } = require("../middleware/authMiddleware");
 const { uploadEventPhoto } = require("../middleware/uploadMiddleware");
@@ -18,6 +19,7 @@ router.get("/", getAllEvents);
 router.use(protect);
 router.get("/myEvents", getMyEvents);
 router.patch("/:id/attend", restrictTo("user"), attendEvent);
+router.patch("/:id/unattend", restrictTo("user"), unattendEvent);
 router.get("/:id", getEvent);
 
 router.post(

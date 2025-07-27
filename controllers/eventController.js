@@ -27,6 +27,27 @@ exports.getMyEvents = catchAsync(async (req, res, next) => {
     });
 });
 
+exports.unattendEvent = catchAsync(async (req, res, next) => {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+        return next(new AppError("Event not found", 404));
+    }
+
+    if (!event.attendees.includes(req.user.id)) {
+        return next(new AppError("You aren't attending this event", 400));
+    }
+
+    event.attendees.pull(req.user.id);
+
+    await event.save();
+
+    res.status(200).json({
+        status: "success",
+        message: "You've successfully unattended to this event.",
+    });
+});
+
 exports.attendEvent = catchAsync(async (req, res, next) => {
     const event = await Event.findById(req.params.id);
 
