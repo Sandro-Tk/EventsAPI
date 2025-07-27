@@ -33,6 +33,9 @@ exports.getAll = (Model) =>
             (match) => `$${match}`
         );
 
+        // Get total results count before pagination
+        const totalResults = await Model.countDocuments(JSON.parse(queryStr));
+
         let query = Model.find(JSON.parse(queryStr));
 
         // 2. Sorting
@@ -60,9 +63,17 @@ exports.getAll = (Model) =>
 
         const docs = await query;
 
+        const totalPages = Math.ceil(totalResults / limit);
+
         res.status(200).json({
             status: "success",
             results: docs.length,
+            pagination: {
+                totalResults,
+                totalPages,
+                currentPage: page,
+                limit,
+            },
             data: { data: docs },
         });
     });
